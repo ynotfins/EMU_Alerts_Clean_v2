@@ -9,124 +9,135 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-
-// Mock NFA Alerts data to match the screenshot
-const mockAlerts = [
-  {
-    id: '1',
-    timestamp: '01/15/2025 02:35 PM',
-    location: 'FL Miami-Dade Miami',
-    distance: '0 mi',
-    type: 'Structure Fire',
-    address: '1425 Brickell Avenue',
-    description: 'High-rise residential fire reported on 15th floor. Multiple units responding. Evacuation in progress.',
-    isFavorite: false,
-  },
-  {
-    id: '2', 
-    timestamp: '01/15/2025 03:15 PM',
-    location: 'FL Hillsborough Tampa',
-    distance: '209.2 mi',
-    type: 'Vehicle Accident',
-    address: '2901 W Kennedy Boulevard',
-    description: 'Multi-vehicle collision at Kennedy & Dale Mabry intersection. Traffic control needed.',
-    isFavorite: false,
-  },
-  {
-    id: '3',
-    timestamp: '01/15/2025 04:02 PM',
-    location: 'FL Orange Orlando',
-    distance: '200.2 mi',
-    type: 'Medical Emergency',
-    address: '8967 International Drive',
-    description: 'Cardiac arrest reported at hotel lobby. AED in use, paramedics requested.',
-    isFavorite: false,
-  },
-  {
-    id: '4',
-    timestamp: '01/15/2025 04:30 PM',
-    location: 'FL Duval Jacksonville',
-    distance: '332.7 mi',
-    type: 'Hazmat Incident',
-    address: '1234 Heckscher Drive',
-    description: 'Chemical spill at industrial facility. Evacuation zone established 500ft radius.',
-    isFavorite: false,
-  },
-  {
-    id: '5',
-    timestamp: '01/15/2025 05:10 PM',
-    location: 'FL Broward Fort Lauderdale',
-    distance: '25.2 mi',
-    type: 'Water Rescue',
-    address: '3456 Las Olas Boulevard',
-    description: 'Boat taking on water near Intracoastal Waterway. Two persons aboard.',
-    isFavorite: false,
-  },
-];
+import { useIncidents } from '../../hooks/useIncidents';
+import { useFavorites } from '../../hooks/useFavorites';
 
 export default function IncidentsScreen() {
-  const [alerts, setAlerts] = useState(mockAlerts);
+  const { incidents, loading, error } = useIncidents();
+  const { favorites, toggle, isFav } = useFavorites();
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
   const onRefresh = async () => {
     setRefreshing(true);
+    // The real-time listener will automatically refresh data
     setTimeout(() => setRefreshing(false), 1000);
   };
 
-  const toggleFavorite = (id: string) => {
-    setAlerts(prev => 
-      prev.map(alert => 
-        alert.id === id 
-          ? { ...alert, isFavorite: !alert.isFavorite }
-          : alert
-      )
-    );
+  const handleToggleFavorite = (incidentId: string) => {
+    toggle(incidentId);
   };
 
-  const getTypeColor = (type: string): string => {
-    switch (type) {
-      case 'Structure Fire': return '#FF3B30';
-      case 'Vehicle Accident': return '#FF9500';
-      case 'Medical Emergency': return '#FF2D92';
-      case 'Hazmat Incident': return '#5856D6';
-      case 'Water Rescue': return '#007AFF';
+  const getTypeColor = (category: string): string => {
+    switch (category.toLowerCase()) {
+      case 'fire': 
+      case 'structure fire': 
+        return '#FF3B30';
+      case 'accident': 
+      case 'vehicle accident': 
+      case 'traffic': 
+        return '#FF9500';
+      case 'medical': 
+      case 'medical emergency': 
+      case 'health': 
+        return '#FF2D92';
+      case 'hazmat': 
+      case 'chemical': 
+      case 'hazmat incident': 
+        return '#5856D6';
+      case 'rescue': 
+      case 'water rescue': 
+      case 'water': 
+        return '#007AFF';
+      case 'security': 
+      case 'crime': 
+        return '#AF52DE';
+      case 'weather': 
+      case 'natural disaster': 
+        return '#FF8C00';
       default: return '#8E8E93';
     }
   };
 
-  const renderAlert = ({ item }: { item: any }) => (
-    <View style={styles.alertCard}>
-      <View style={styles.alertHeader}>
-        <Text style={styles.timestamp}>{item.timestamp}</Text>
-        <TouchableOpacity 
-          style={styles.favoriteButton}
-          onPress={() => toggleFavorite(item.id)}
-        >
-          <Ionicons 
-            name={item.isFavorite ? "heart" : "heart-outline"} 
-            size={20} 
-            color={item.isFavorite ? "#FF3B30" : "#8E8E93"} 
-          />
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.alertLocation}>
-        <Text style={styles.locationText}>{item.location}</Text>
-        <Text style={styles.distanceText}>{item.distance}</Text>
-      </View>
-      
-      <View style={styles.alertType}>
-        <View style={[styles.typeIndicator, { backgroundColor: getTypeColor(item.type) }]} />
-        <Text style={[styles.typeText, { color: getTypeColor(item.type) }]}>
-          {item.type}
-        </Text>
-      </View>
-      
-      <Text style={styles.address}>{item.address}</Text>
-      <Text style={styles.description}>{item.description}</Text>
-    </View>
-  );
+  const getSeverityColor = (severity: string): string => {
+    switch (severity) {
+      case 'critical': return '#FF3B30';
+      case 'high': return '#FF9500';
+      case 'medium': return '#FFD60A';
+      case 'low': return '#34C759';
+      default: return '#8E8E93';
+    }
+  };
+
+  const getStatusColor = (status: string): string => {
+    switch (status) {
+      case 'active': return '#FF3B30';
+      case 'investigating': return '#FF9500';
+      case 'resolved': return '#34C759';
+      default: return '#8E8E93';
+    }
+  };
+
+  const renderAlert = ({ item }: { item: any }) => {
+    const formattedTime = item.timestamp instanceof Date 
+      ? item.timestamp.toLocaleDateString('en-US', {
+          month: '2-digit',
+          day: '2-digit', 
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+      : 'Unknown time';
+    
+    const isItemFavorite = isFav(item.id);
+    
+    return (
+      <TouchableOpacity 
+        style={styles.alertCard}
+        onPress={() => router.push(`/incident/${item.id}`)}
+      >
+        <View style={styles.alertHeader}>
+          <Text style={styles.timestamp}>{formattedTime}</Text>
+          <TouchableOpacity 
+            style={styles.favoriteButton}
+            onPress={() => handleToggleFavorite(item.id)}
+          >
+            <Ionicons 
+              name={isItemFavorite ? "heart" : "heart-outline"} 
+              size={20} 
+              color={isItemFavorite ? "#FF3B30" : "#8E8E93"} 
+            />
+          </TouchableOpacity>
+        </View>
+        
+        <View style={styles.alertLocation}>
+          <Text style={styles.locationText}>{item.location || 'Location unknown'}</Text>
+          <View style={[styles.severityBadge, { backgroundColor: getSeverityColor(item.severity) }]}>
+            <Text style={styles.severityText}>{item.severity?.toUpperCase()}</Text>
+          </View>
+        </View>
+        
+        <View style={styles.alertType}>
+          <View style={[styles.typeIndicator, { backgroundColor: getTypeColor(item.category) }]} />
+          <Text style={[styles.typeText, { color: getTypeColor(item.category) }]}>
+            {item.category}
+          </Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
+            <Text style={styles.statusText}>{item.status?.toUpperCase()}</Text>
+          </View>
+        </View>
+        
+        <Text style={styles.address}>{item.title}</Text>
+        <Text style={styles.description}>{item.description}</Text>
+        
+        {item.affectedAreas && item.affectedAreas.length > 0 && (
+          <Text style={styles.affectedAreas}>
+            Affected: {item.affectedAreas.join(', ')}
+          </Text>
+        )}
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -141,12 +152,35 @@ export default function IncidentsScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Alerts List */}
+      {/* Error handling */}
+      {error && (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>Error loading incidents: {error}</Text>
+        </View>
+      )}
+
+      {/* Loading indicator */}
+      {loading && incidents.length === 0 && (
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Loading incidents...</Text>
+        </View>
+      )}
+
+      {/* No incidents message */}
+      {!loading && !error && incidents.length === 0 && (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="information-circle-outline" size={48} color="#8E8E93" />
+          <Text style={styles.emptyText}>No incidents available</Text>
+          <Text style={styles.emptySubtext}>Pull to refresh and check for new alerts</Text>
+        </View>
+      )}
+
+      {/* Incidents List */}
       <FlatList
-        data={alerts}
+        data={incidents}
         renderItem={renderAlert}
         keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.listContent}
+        contentContainerStyle={[styles.listContent, incidents.length === 0 && { flex: 1 }]}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -253,5 +287,74 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#000000',
     lineHeight: 20,
+  },
+  severityBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  severityText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  statusBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  statusText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  affectedAreas: {
+    fontSize: 12,
+    color: '#8E8E93',
+    marginTop: 4,
+    fontStyle: 'italic',
+  },
+  errorContainer: {
+    padding: 16,
+    backgroundColor: '#FFE5E5',
+    marginHorizontal: 16,
+    marginVertical: 8,
+    borderRadius: 8,
+  },
+  errorText: {
+    fontSize: 14,
+    color: '#FF3B30',
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#8E8E93',
+    marginTop: 16,
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#8E8E93',
+    marginTop: 16,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    color: '#8E8E93',
+    marginTop: 8,
+    textAlign: 'center',
   },
 });
