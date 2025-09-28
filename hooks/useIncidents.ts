@@ -40,6 +40,8 @@ export const useIncidents = (maxResults: number = 50) => {
   });
 
   useEffect(() => {
+    console.log('[INCIDENTS] Starting incidents query...');
+    
     const incidentsQuery = query(
       collection(db, 'incidents'),
       orderBy('timestamp', 'desc'),
@@ -49,10 +51,18 @@ export const useIncidents = (maxResults: number = 50) => {
     const unsubscribe = onSnapshot(
       incidentsQuery,
       (snapshot) => {
+        console.log('[INCIDENTS] Got snapshot:', {
+          size: snapshot.size,
+          empty: snapshot.empty,
+          docs: snapshot.docs.length
+        });
+        
         const incidents: Incident[] = [];
         const seenAlertIds = new Set<string>();
 
         snapshot.docs.forEach((doc) => {
+          console.log('[INCIDENTS] Processing doc:', doc.id, doc.data());
+        
           const data = doc.data();
           const incident: Incident = {
             id: doc.id,
@@ -94,6 +104,8 @@ export const useIncidents = (maxResults: number = 50) => {
           }
         });
 
+        console.log('[INCIDENTS] Final processed incidents:', incidents.length);
+        
         setState({
           incidents: incidents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
           loading: false,
@@ -101,6 +113,7 @@ export const useIncidents = (maxResults: number = 50) => {
         });
       },
       (error) => {
+        console.log('[INCIDENTS] Error:', error.message);
         setState(prev => ({
           ...prev,
           loading: false,

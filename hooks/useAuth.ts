@@ -16,7 +16,14 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
+    console.log('[AUTH] Starting auth listener...');
+    
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      console.log('[AUTH] Auth state changed:', {
+        user: user ? { uid: user.uid, email: user.email } : null,
+        isSignedIn: !!user
+      });
+      
       setState(prev => ({
         ...prev,
         user,
@@ -24,6 +31,7 @@ export const useAuth = () => {
         error: null,
       }));
     }, (error) => {
+      console.log('[AUTH] Auth error:', error.message);
       setState(prev => ({
         ...prev,
         loading: false,

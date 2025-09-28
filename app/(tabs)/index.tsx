@@ -18,6 +18,14 @@ export default function IncidentsScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const router = useRouter();
 
+  // Debug logging
+  console.log('[INCIDENTS_SCREEN] Component rendered:', {
+    incidentsCount: incidents.length,
+    loading,
+    error,
+    hasFireIncidents: incidents.filter(i => i.category.toLowerCase().includes('fire')).length
+  });
+
   const onRefresh = async () => {
     setRefreshing(true);
     // The real-time listener will automatically refresh data
