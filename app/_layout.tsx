@@ -9,10 +9,20 @@ import ToastHost from './_toast-host';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  // Development mode - skip authentication for now
+  const DEVELOPMENT_MODE = true;
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    // In development mode, skip authentication and go directly to tabs
+    if (DEVELOPMENT_MODE) {
+      SplashScreen.hideAsync();
+      router.replace('/(tabs)');
+      return;
+    }
+
+    // Production authentication flow
     if (!loading) {
       SplashScreen.hideAsync();
       
@@ -25,8 +35,8 @@ export default function RootLayout() {
     }
   }, [user, loading, router]);
 
-  // Show nothing while checking authentication
-  if (loading) {
+  // In development mode, don't block on loading
+  if (!DEVELOPMENT_MODE && loading) {
     return null;
   }
 
