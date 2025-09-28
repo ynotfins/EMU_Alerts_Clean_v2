@@ -113,11 +113,23 @@ export const useIncidents = (maxResults: number = 50) => {
         });
       },
       (error) => {
-        console.log('[INCIDENTS] Error:', error.message);
+        console.log('[INCIDENTS] Error:', error.message, error.code);
+        
+        let userFriendlyError = error.message;
+        
+        // Handle specific Firebase errors
+        if (error.code === 'permission-denied') {
+          userFriendlyError = 'Authentication required to view incidents. Please sign in.';
+        } else if (error.code === 'unavailable') {
+          userFriendlyError = 'Firebase service is unavailable. Check your internet connection.';
+        } else if (error.code === 'not-found') {
+          userFriendlyError = 'Incidents collection not found. Please check Firebase setup.';
+        }
+        
         setState(prev => ({
           ...prev,
           loading: false,
-          error: error.message,
+          error: userFriendlyError,
         }));
       }
     );

@@ -18,19 +18,19 @@ export default function RootLayout() {
     if (!loading) {
       SplashScreen.hideAsync();
       
-      // TEMP: Skip auth for debugging - remove this later
+      // Check if dev mode is enabled to bypass auth
       const devMode = process.env.EXPO_PUBLIC_DEV_MODE === 'true';
       console.log('[LAYOUT] Dev mode:', devMode);
       
       if (devMode) {
-        console.log('[LAYOUT] Dev mode enabled, going to tabs');
+        console.log('[LAYOUT] Dev mode enabled, bypassing auth and going to tabs');
         router.replace('/(tabs)');
         return;
       }
       
-      // Normal auth flow
+      // Normal Firebase auth flow
       if (!user) {
-        console.log('[LAYOUT] No user, redirecting to login');
+        console.log('[LAYOUT] No user authenticated, redirecting to login');
         router.replace('/login');
       } else {
         console.log('[LAYOUT] User authenticated, redirecting to tabs');

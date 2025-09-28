@@ -15,6 +15,15 @@ const firebaseConfig = {
   measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID,
 };
 
+// Validate required Firebase config
+const requiredFields = ['apiKey', 'authDomain', 'projectId', 'storageBucket', 'messagingSenderId', 'appId'];
+const missingFields = requiredFields.filter(field => !firebaseConfig[field as keyof typeof firebaseConfig]);
+
+if (missingFields.length > 0) {
+  console.error('[FIREBASE] Missing required environment variables:', missingFields.map(f => `EXPO_PUBLIC_FIREBASE_${f.toUpperCase()}`));
+  console.error('[FIREBASE] Please check your .env file contains all required Firebase credentials');
+}
+
 const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
 
 // Auth: For managed Expo, just use getAuth - persistence is handled automatically
