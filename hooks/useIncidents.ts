@@ -40,6 +40,8 @@ export const useIncidents = (maxResults: number = 50) => {
   });
 
   useEffect(() => {
+    console.log('[INCIDENTS] Starting incidents query...');
+    
     const incidentsQuery = query(
       collection(db, 'incidents'),
       orderBy('timestamp', 'desc'),
@@ -49,10 +51,18 @@ export const useIncidents = (maxResults: number = 50) => {
     const unsubscribe = onSnapshot(
       incidentsQuery,
       (snapshot) => {
+        console.log('[INCIDENTS] Got snapshot:', {
+          size: snapshot.size,
+          empty: snapshot.empty,
+          docs: snapshot.docs.length
+        });
+        
         const incidents: Incident[] = [];
         const seenAlertIds = new Set<string>();
 
         snapshot.docs.forEach((doc) => {
+          console.log('[INCIDENTS] Processing doc:', doc.id, doc.data());
+        
           const data = doc.data();
           const incident: Incident = {
             id: doc.id,
@@ -94,6 +104,8 @@ export const useIncidents = (maxResults: number = 50) => {
           }
         });
 
+        console.log('[INCIDENTS] Final processed incidents:', incidents.length);
+        
         setState({
           incidents: incidents.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()),
           loading: false,
@@ -101,10 +113,23 @@ export const useIncidents = (maxResults: number = 50) => {
         });
       },
       (error) => {
+        console.log('[INCIDENTS] Error:', error.message, error.code);
+        
+        let userFriendlyError = error.message;
+        
+        // Handle specific Firebase errors
+        if (error.code === 'permission-denied') {
+          userFriendlyError = 'Authentication required to view incidents. Please sign in.';
+        } else if (error.code === 'unavailable') {
+          userFriendlyError = 'Firebase service is unavailable. Check your internet connection.';
+        } else if (error.code === 'not-found') {
+          userFriendlyError = 'Incidents collection not found. Please check Firebase setup.';
+        }
+        
         setState(prev => ({
           ...prev,
           loading: false,
-          error: error.message,
+          error: userFriendlyError,
         }));
       }
     );

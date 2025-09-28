@@ -9,24 +9,39 @@ import ToastHost from './_toast-host';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
-  const { user, loading } = useAuth();
+  const { user, loading, error } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    console.log('[LAYOUT] Auth state:', { user: !!user, loading, error });
+    
     if (!loading) {
       SplashScreen.hideAsync();
       
-      // Redirect based on authentication state
+      // Check if dev mode is enabled to bypass auth
+      const devMode = process.env.EXPO_PUBLIC_DEV_MODE === 'true';
+      console.log('[LAYOUT] Dev mode:', devMode);
+      
+      if (devMode) {
+        console.log('[LAYOUT] Dev mode enabled, bypassing auth and going to tabs');
+        router.replace('/(tabs)');
+        return;
+      }
+      
+      // Normal Firebase auth flow
       if (!user) {
+        console.log('[LAYOUT] No user authenticated, redirecting to login');
         router.replace('/login');
       } else {
+        console.log('[LAYOUT] User authenticated, redirecting to tabs');
         router.replace('/(tabs)');
       }
     }
-  }, [user, loading, router]);
+  }, [user, loading, error, router]);
 
   // Show nothing while checking authentication
   if (loading) {
+    console.log('[LAYOUT] Still loading auth...');
     return null;
   }
 
