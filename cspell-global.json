@@ -21,6 +21,7 @@
     "FERPA",
     "prepush",
     "precommit",
+    "pwsh",
     "APPINVITE",
     "SIGNIN",
     "GCM"
