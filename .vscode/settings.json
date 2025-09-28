@@ -15,7 +15,8 @@
     "Turbopack",
     "FERPA",
     "prepush",
-    "precommit"
+    "precommit",
+    "pwsh"
   ],
   "cSpell.ignorePaths": [
     "**/node_modules/**",
